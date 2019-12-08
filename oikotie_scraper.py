@@ -123,7 +123,7 @@ class Downloader:
                 print("Currently at document number: " + str(i))
                 seed(datetime.now().second)
                 self.driver.get(template_url.replace("{PAGE_NUMBER}",str(i)))    
-                time.sleep(5)
+                #time.sleep(3)
                 
                 soup = BeautifulSoup(self.driver.page_source, 'html.parser')
                 
@@ -191,7 +191,7 @@ class Downloader:
                     
                     try:
                         self.driver.get(link)
-                        time.sleep(3)
+                        #time.sleep(1)
                         sub_page_soup = BeautifulSoup(self.driver.page_source, 'html.parser')
                     except:
                         print("Error occurred while retrieving link: " + link)
@@ -200,7 +200,7 @@ class Downloader:
                     if (error_with_current_link == True):
                         try:
                             self.driver.get(link)
-                            time.sleep(3)
+                            time.sleep(5)
                             sub_page_soup = BeautifulSoup(self.driver.page_source, 'html.parser')
                         except:
                             print("Error occurred while re-retrieving link: " + link)
@@ -245,7 +245,7 @@ class Downloader:
 
 def main():
     print("Initializing Downloader.")
-    downloader = Downloader("main", "Firefox")
+    downloader = Downloader("main", "Chrome")
     templateDict = {}
 
     templateDict["name"] = "yksio-kaksio-myytavat-espoo-helsinki-vantaa-omatontti-kerrostalo"
@@ -285,8 +285,7 @@ def main():
         else:
             time_to_sleep = 60 * 60 * 24
 
-        print("Sleeping for " + str(round(time_to_sleep/60/60, 2) + " hours.")
-
+        print("Sleeping for " + str(round(time_to_sleep/60/60, 2)) + " hours.")
         time.sleep(time_to_sleep)
 
 main()
