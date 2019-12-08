@@ -12,6 +12,7 @@ from random import seed
 from random import random
 
 from datetime import datetime
+from datetime import date
 
 class House:
     def __init__(self, link, street, district, city, price, roomConfiguration, buildingYear, subType, additionalInfo, date):
@@ -29,9 +30,20 @@ class House:
 def string_cleaner(input):
     return input.replace(u'\xa0', u' ')
 
-options = Options()
-options.headless = True 
-driver = webdriver.Firefox(options=options)
+chrome_options = webdriver.ChromeOptions()
+chrome_options.add_argument("--headless")
+chrome_options.add_argument("--disable-gpu")
+chrome_options.add_argument("--disable-extensions")
+chrome_options.add_argument("--ignore-certificate-errors")
+chrome_options.add_argument("--disable-features=VizDisplayCompositor")
+
+driver = webdriver.Chrome(options=chrome_options)
+
+#options = Options()
+#options.headless = True 
+#driver = webdriver.Firefox(options=options)
+driver = webdriver.Chrome(options=chrome_options)
+#driver = webdriver.PhantomJS(service_log_path='/home/pi/temp/phantomjs/ghostdriver.log')
 templateDict = {}
 sleep_time = 24 * 60 * 60 # 24 hours sleepy sleep
 
@@ -47,7 +59,10 @@ templateDict["3"] = "https://asunnot.oikotie.fi/vuokrattavat-asunnot?pagination=
 if ((len(sys.argv) -1) > 0):
     print("Being called with more than 0 arguments. Setting arguments.")
     template_url = templateDict[sys.argv[2]]
-    home_path = "C:\\Users\\orent\\Documents\\Asuntosijoittaminen\\webscraper\\{path}\\".replace("{path}", sys.argv[1])
+    #home_path = "C:\\Users\\orent\\Documents\\Asuntosijoittaminen\\webscraper\\{path}\\".replace("{path}", sys.argv[1])
+    home_path = os.path.join(os.getcwd(), sys.argv[1], sys.argv[2])
+    with open(os.path.join(home_path, "config.txt"), "w") as f:
+        f.write(templateDict[sys.argv[2]])
 else:
     print("Usage: python.py rent/sale template_id")
     exit()
@@ -72,11 +87,17 @@ else:
 
 #next_page_click = driver.find_element_by_xpath("//button[@ng-click='$ctrl.togglePage($ctrl.page + 1)']")
 
+error_links = []
+
 while True:
-    print("Starting to scrape.")
+    print("Running scraper with parameters: " + str(sys.argv[1]) + " " + str(sys.argv[2]))
+    start_time = datetime.now()
+    
     date_today_str = datetime.now().strftime("%Y-%m-%d")
 
     driver.get(template_url.replace("{PAGE_NUMBER}","1"))
+    time.sleep(5)
+    
     soup = BeautifulSoup(driver.page_source, 'html.parser')
     maxPages = int(soup.find_all(attrs={"ng-bind":"$ctrl.page + ($ctrl.totalPages ? '/' + $ctrl.totalPages : '')"})[0].string.split('/')[1])
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight*" + str(round((random() * 0.30) + 0.5,2)) + ");")
@@ -88,7 +109,8 @@ while True:
         print("Currently at document number: " + str(i))
         seed(datetime.now().second)
         driver.get(template_url.replace("{PAGE_NUMBER}",str(i)))    
-        time.sleep(0.5)
+        time.sleep(5)
+        
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         
         write_dir = os.path.join(home_path, "temp", date_today_str)
@@ -104,6 +126,8 @@ while True:
         allCards = soup.find_all(attrs={"ng-repeat":"card in $ctrl.parsedCards track by card.id"})
 
         for card in allCards:
+            error_with_current_link = False
+            
             link = card.a.attrs['ng-href']
             street = card.find_all(attrs={"ng-bind":"$ctrl.card.building.address"})
             if (len(street) > 0):
@@ -152,13 +176,26 @@ while True:
                 subType = string_cleaner(subType[0].string)
             else:
                 subType = str(subType)
+            
+            try:
+                driver.get(link)
+                time.sleep(0.7)
+                sub_page_soup = BeautifulSoup(driver.page_source, 'html.parser')
+            except:
+                print("Error occurred while retrieving link: " + link)
+                error_with_current_link = True
+                
+            if (error_with_current_link == True):
+                try:
+                    driver.get(link)
+                    time.sleep(0.7)
+                    sub_page_soup = BeautifulSoup(driver.page_source, 'html.parser')
+                except:
+                    print("Error occurred while re-retrieving link: " + link)
+                    error_links.append(link)
 
-            driver.get(link)
-            time.sleep(0.7)
-            sub_page_soup = BeautifulSoup(driver.page_source, 'html.parser')
-
-            with open(os.path.join(home_path, "temp", datetime.now().strftime("%Y-%m-%d"), "pageSourceSubPage" + "_" + str(uuid.uuid4()) + ".txt"), "w", encoding="utf-8") as file:
-                file.write(soup.prettify())
+            #with open(os.path.join(home_path, "temp", datetime.now().strftime("%Y-%m-%d"), "pageSourceSubPage" + "_" + str(uuid.uuid4()) + ".txt"), "w", encoding="utf-8") as file:
+            #    file.write(soup.prettify())
 
             all_info_table_rows = sub_page_soup.select("div.info-table__row")
 
@@ -175,9 +212,16 @@ while True:
                     if (type(value) == str and type(metadata) == str):
                         sub_page_info_dict[metadata] = value
                 except:
-                    print("An error with all_info_tables, probably fine: " + str(info))
+                    #print("An error with all_info_tables, probably fine: " + str(info))
+                    print("An error with all_info_tables, probably fine.")
                         
             houseObjects.append(House(link, street, district, city, price, roomConfiguration, buildingYear, subType, sub_page_info_dict, date_today_str))
+    end_time = datetime.now()
+    
+    print("Had errors with the following links: " + str(error_links))
+    
+    print("Downloading finished in: " + str( (((end_time - start_time).seconds / 60)/60)) + " hours.")
+    
     print("Writing output files.")
     output_dict = {}
     for j in range(0, len(houseObjects)):
@@ -187,7 +231,17 @@ while True:
     with open(json_output_file, 'w') as f:
         json.dump(output_dict, f, ensure_ascii=False, indent=4)
     
-    print("Sleeping for " + str(sleep_time) ".")
-    time.sleep(sleep_time)
+    latest_run_date = datetime.strptime(str(start_time.year) + "-" + str(start_time.month) + "-" + str(start_time.day), "%Y-%m-%d").date()
+    date_now = date.now()
+    
+    # if a day has passed, sleep for 16 hours
+    # otherwise sleep for 24 hours
+    if (latest_run_date < date_now):
+        time_to_sleep = 60 * 60 * 16
+    else:
+        time_to_sleep = 60 * 60 * 24
+    
+    time.sleep(time_to_sleep)
+    break
 
 
