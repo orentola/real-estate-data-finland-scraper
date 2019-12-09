@@ -16,6 +16,18 @@ from datetime import datetime
 from datetime import date
 
 home_path = os.path.join(os.getcwd())
+USER_AGENT_LIST = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:53.0) Gecko/20100101 Firefox/53.0",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.79 Safari/537.36 Edge/14.14393",
+    "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Trident/6.0; MDDCJS)",
+    "Mozilla/5.0 (iPad; CPU OS 8_4_1 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) Version/8.0 Mobile/12H321 Safari/600.1.4",
+    "Mozilla/5.0 (Linux; Android 6.0.1; SAMSUNG SM-G570Y Build/MMB29K) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/4.0 Chrome/44.0.2403.133 Mobile Safari/537.36",
+    "Mozilla/5.0 (Linux; Android 5.0; SAMSUNG SM-N900 Build/LRX21V) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/2.1 Chrome/34.0.1847.76 Mobile Safari/537.36",
+    "Mozilla/5.0 (Linux; U; Android-4.0.3; en-us; Galaxy Nexus Build/IML74K) AppleWebKit/535.7 (KHTML, like Gecko) CrMo/16.0.912.75 Mobile Safari/535.7",
+    "Mozilla/5.0 (Linux; Android 7.0; HTC 10 Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.83 Mobile Safari/537.36",
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_1 like Mac OS X) AppleWebKit/603.1.30 (KHTML, like Gecko) Version/10.0 Mobile/14E304 Safari/602.1"
+]
 
 #if ((len(sys.argv) -1) > 0):
 #    print("Being called with more than 0 arguments. Setting arguments.")
@@ -37,6 +49,9 @@ home_path = os.path.join(os.getcwd())
 ### Yksio-kaksio myytavat espoo-helsinki-vantaa oma-tontti kerrostalo
 #templateDict["1"] = "https://asunnot.oikotie.fi/myytavat-asunnot?pagination={PAGE_NUMBER}&locations=%5B%5B64,6,%22Helsinki%22%5D,%5B39,6,%22Espoo%22%5D,%5B65,6,%22Vantaa%22%5D%5D&lotOwnershipType%5B%5D=1&roomCount%5B%5D=1&roomCount%5B%5D=2&buildingType%5B%5D=1&buildingType%5B%5D=256&cardType=100"
 
+def string_cleaner(input):
+    return input.replace(u'\xa0', u' ')
+
 class House:
     def __init__(self, link, street, district, city, price, roomConfiguration, buildingYear, subType, additionalInfo, date):
         self.link = link
@@ -49,9 +64,6 @@ class House:
         self.subType = subType
         self.additionalInfo = additionalInfo
         self.date = date
-        
-def string_cleaner(input):
-    return input.replace(u'\xa0', u' ')
 
 class Downloader:
     def __init__(self, name, driver_type):
@@ -62,8 +74,10 @@ class Downloader:
         self.driver_type = driver_type
         self.current_houses = []
         self.options = None
+        self.current_user_agent = ""
         #self.home_path = os.getcwd()
-    
+        self.driver_profile = ""
+
     def initialize_driver(self):
         if (self.driver_type == "Chrome"):
             self.chrome_options = webdriver.ChromeOptions()
@@ -72,30 +86,28 @@ class Downloader:
             self.chrome_options.add_argument("--disable-extensions")
             self.chrome_options.add_argument("--ignore-certificate-errors")
             self.chrome_options.add_argument("--disable-features=VizDisplayCompositor")
+            self.chrome_options.add_argument("--user-agent=" + USER_AGENT_LIST[int(round(random() * len(USER_AGENT_LIST), 1))])
             self.driver = webdriver.Chrome(options=self.chrome_options)
             return True
         if (self.driver_type == "Firefox"):
             self.options = Options()
             self.options.headless = True
-            self.driver = webdriver.Firefox(options=self.options)
+            self.driver_profile = webdriver.FirefoxProfile()
+            self.driver_profile.set_preference("general.useragent.override", USER_AGENT_LIST[int(round(random() * len(USER_AGENT_LIST), 1))])            
+            self.driver = webdriver.Firefox(options=self.options, firefox_profile=self.driver_profile)
             return True
+        return False   
 
-        return False        
+    def quit_driver(self):
+        try:
+            self.driver.quit()
+        except:
+            print("Exception in quitting driver, probably closed already.")
 
     def add_template(self, template):
         self.templates.append(template)
-    
+
     def run_scraper(self):
-        #templates_to_run = []
-        #if (template_id == None):
-        #    templates_to_run = templates
-        #else:
-        #    try:
-        #        templates_to_run.append(templates[template_id])
-        #    except:
-        #        print("Error with selecting templates.")
-        #        raise Exception("Problem with template selection.")
-        
         for t in self.templates:
             print("Running template: " + t["name"] + ".")
             template_url = t["url"]
@@ -103,14 +115,15 @@ class Downloader:
             current_base_path = os.path.join(home_path, "data", date_today_str, t["type"], t["name"])
             current_house_objects = []
             current_error_links = []
-
             houseObjects = []
+
+            self.initialize_driver()
 
             start_time = datetime.now()
 
             if not os.path.exists(current_base_path):
                 os.makedirs(current_base_path)
-
+            
             self.driver.get(template_url.replace("{PAGE_NUMBER}","1"))
             time.sleep(5)
             
@@ -118,16 +131,17 @@ class Downloader:
             maxPages = int(soup.find_all(attrs={"ng-bind":"$ctrl.page + ($ctrl.totalPages ? '/' + $ctrl.totalPages : '')"})[0].string.split('/')[1])
             self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight*" + str(round((random() * 0.30) + 0.5,2)) + ");")
 
-            for i in range(1, 1+1):
-            #for i in range(1, maxPages+1):
+            #for i in range(1, 1+1):
+            for i in range(1, maxPages+1):
                 print("Currently at document number: " + str(i))
+                # Clear cookies
+                self.driver.delete_all_cookies()
+                
                 seed(datetime.now().second)
                 self.driver.get(template_url.replace("{PAGE_NUMBER}",str(i)))    
                 time.sleep(5)
                 
                 soup = BeautifulSoup(self.driver.page_source, 'html.parser')
-                
-
                 
                 #with open(os.path.join(write_dir, "pageSourceRoot_" + str(i) + ".txt"), "w", encoding="utf-8") as file:
                 #    file.write(soup.prettify())
@@ -136,7 +150,7 @@ class Downloader:
                 sub_page_info_dict = {}
 
                 allCards = soup.find_all(attrs={"ng-repeat":"card in $ctrl.parsedCards track by card.id"})
-
+                
                 for card in allCards:
                     error_with_current_link = False
                     
@@ -182,7 +196,7 @@ class Downloader:
                         buildingYear = string_cleaner(buildingYear[0].string)
                     else:
                         buildingYear = str(buildingYear)
-
+                    
                     subType = card.find_all(attrs={"ng-if":"$ctrl.card.subType"})
                     if (len(subType) > 0):
                         subType = string_cleaner(subType[0].string)
@@ -196,7 +210,7 @@ class Downloader:
                     except:
                         print("Error occurred while retrieving link: " + link)
                         error_with_current_link = True
-                        
+                    
                     if (error_with_current_link == True):
                         try:
                             self.driver.get(link)
@@ -225,10 +239,12 @@ class Downloader:
                                 sub_page_info_dict[metadata] = value
                         except:
                             #print("An error with all_info_tables, probably fine: " + str(info))
-                            print("An error with all_info_tables, probably fine.")
-                                
-                    current_house_objects.append(House(link, street, district, city, price, roomConfiguration, buildingYear, subType, sub_page_info_dict, date_today_str))
+                            #print("An error with all_info_tables, probably fine.")
+                            pass
+                    
+                    current_house_objects.append(House(link, street, district, city, price, roomConfiguration, buildingYear, subType, sub_page_info_dict, date_today_str))        
             end_time = datetime.now()
+            self.driver.quit()
             
             print("Had errors with the following links: " + str(current_error_links))
             
@@ -238,7 +254,7 @@ class Downloader:
             output_dict = {}
             for j in range(0, len(current_house_objects)):
                 output_dict[j] = json.dumps(current_house_objects[j].__dict__)
-
+            
             json_output_file = os.path.join(current_base_path, "data.json")
             with open(json_output_file, 'w') as f:
                 json.dump(output_dict, f, ensure_ascii=False, indent=4)            
@@ -263,30 +279,40 @@ def main():
     templateDict["type"] = "rent"
     downloader.add_template(copy.deepcopy(templateDict))
 
-    downloader.initialize_driver()
-
     print("Downloader initialized.")
     
     print("Starting the downloader loop.")
-    while True:
-        time_start = datetime.now()
-        downloader.run_scraper()
-        time_end = datetime.now()
+    try:
+        while True:
+            time_start = datetime.now()
+            downloader.run_scraper()
+            time_end = datetime.now()
 
-        print("Last runs took: " + str(round(((time_end - time_start).seconds)/60/60)) + " hours.")
+            total_run_time = ((time_end - time_start).seconds)/60/60
 
-        latest_run_date = datetime.strptime(str(time_start.year) + "-" + str(time_start.month) + "-" + str(time_start.day), "%Y-%m-%d").date()
-        date_now = date.today()
+            print("Last runs took: " + str(round(total_run_time)) + " hours.")
 
-        # if a day has passed, sleep for 16 hours
-        # otherwise sleep for 24 hours
-        if (latest_run_date < date_now):
-            time_to_sleep = 60 * 60 * 16
-        else:
-            time_to_sleep = 60 * 60 * 24
+            latest_run_date = datetime.strptime(str(time_start.year) + "-" + str(time_start.month) + "-" + str(time_start.day), "%Y-%m-%d").date()
+            date_now = date.today()
 
-        print("Sleeping for " + str(round(time_to_sleep/60/60, 2) + " hours.")
+            # Sleep for 24 - runtime hours
+            time_to_sleep = max(0, 24 - total_run_time) * 60 * 60
 
-        time.sleep(time_to_sleep)
+            # if a day has passed, sleep for 16 hours
+            # otherwise sleep for 24 hours
+            #if (latest_run_date < date_now):
+            #    time_to_sleep = 60 * 60 * 16
+            #else:
+            #    time_to_sleep = 60 * 60 * 24
+
+            print("Sleeping for " + str(round(time_to_sleep/60/60, 2)) + " hours.")
+
+            time.sleep(time_to_sleep)
+        downloader.quit_driver()
+    except:
+        print("Unhandled exception.")
+        downloader.quit_driver()
+    finally:
+        downloader.quit_driver()
 
 main()
