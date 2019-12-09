@@ -207,6 +207,8 @@ class Downloader:
                         self.driver.get(link)
                         #time.sleep(1)
                         sub_page_soup = BeautifulSoup(self.driver.page_source, 'html.parser')
+                    except KeyError:
+                        raise
                     except:
                         print("Error occurred while retrieving link: " + link)
                         error_with_current_link = True
@@ -216,6 +218,8 @@ class Downloader:
                             self.driver.get(link)
                             time.sleep(5)
                             sub_page_soup = BeautifulSoup(self.driver.page_source, 'html.parser')
+                        except KeyError:
+                            raise
                         except:
                             print("Error occurred while re-retrieving link: " + link)
                             current_error_links.append(link)
@@ -237,11 +241,15 @@ class Downloader:
 
                             if (type(value) == str and type(metadata) == str):
                                 sub_page_info_dict[metadata] = value
+                        except KeyError:
+                            raise
                         except:
                             #print("An error with all_info_tables, probably fine: " + str(info))
                             #print("An error with all_info_tables, probably fine.")
                             pass
                     
+                    # TODO
+                    # if len(current_house_objects) == 0: -> rerun latest download
                     current_house_objects.append(House(link, street, district, city, price, roomConfiguration, buildingYear, subType, sub_page_info_dict, date_today_str))        
             end_time = datetime.now()
             self.driver.quit()
@@ -309,6 +317,9 @@ def main():
 
             time.sleep(time_to_sleep)
         downloader.quit_driver()
+    except KeyError:
+        downloader.quit_driver()
+        raise
     except:
         print("Unhandled exception.")
         downloader.quit_driver()
