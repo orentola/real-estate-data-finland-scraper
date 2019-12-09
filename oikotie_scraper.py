@@ -139,7 +139,7 @@ class Downloader:
                 
                 seed(datetime.now().second)
                 self.driver.get(template_url.replace("{PAGE_NUMBER}",str(i)))    
-                time.sleep(5)
+                #time.sleep(3)
                 
                 soup = BeautifulSoup(self.driver.page_source, 'html.parser')
                 
@@ -205,7 +205,7 @@ class Downloader:
                     
                     try:
                         self.driver.get(link)
-                        time.sleep(3)
+                        #time.sleep(1)
                         sub_page_soup = BeautifulSoup(self.driver.page_source, 'html.parser')
                     except:
                         print("Error occurred while retrieving link: " + link)
@@ -214,7 +214,7 @@ class Downloader:
                     if (error_with_current_link == True):
                         try:
                             self.driver.get(link)
-                            time.sleep(3)
+                            time.sleep(5)
                             sub_page_soup = BeautifulSoup(self.driver.page_source, 'html.parser')
                         except:
                             print("Error occurred while re-retrieving link: " + link)
@@ -261,7 +261,7 @@ class Downloader:
 
 def main():
     print("Initializing Downloader.")
-    downloader = Downloader("main", "Firefox")
+    downloader = Downloader("main", "Chrome")
     templateDict = {}
 
     templateDict["name"] = "yksio-kaksio-myytavat-espoo-helsinki-vantaa-omatontti-kerrostalo"
@@ -314,5 +314,24 @@ def main():
         downloader.quit_driver()
     finally:
         downloader.quit_driver()
+    while True:
+        time_start = datetime.now()
+        downloader.run_scraper()
+        time_end = datetime.now()
+
+        print("Last runs took: " + str(round(((time_end - time_start).seconds)/60/60)) + " hours.")
+
+        latest_run_date = datetime.strptime(str(time_start.year) + "-" + str(time_start.month) + "-" + str(time_start.day), "%Y-%m-%d").date()
+        date_now = date.today()
+
+        # if a day has passed, sleep for 16 hours
+        # otherwise sleep for 24 hours
+        if (latest_run_date < date_now):
+            time_to_sleep = 60 * 60 * 16
+        else:
+            time_to_sleep = 60 * 60 * 24
+
+        print("Sleeping for " + str(round(time_to_sleep/60/60, 2)) + " hours.")
+        time.sleep(time_to_sleep)
 
 main()
