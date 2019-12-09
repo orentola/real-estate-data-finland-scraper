@@ -28,7 +28,7 @@ USER_AGENT_LIST = [
     "Mozilla/5.0 (Linux; Android 7.0; HTC 10 Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.83 Mobile Safari/537.36",
     "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_1 like Mac OS X) AppleWebKit/603.1.30 (KHTML, like Gecko) Version/10.0 Mobile/14E304 Safari/602.1"
 ]
-BROWSER_TO_USE = "Firefox"
+BROWSER_TO_USE = "Chrome"
 
 #if ((len(sys.argv) -1) > 0):
 #    print("Being called with more than 0 arguments. Setting arguments.")
@@ -210,18 +210,22 @@ class Downloader:
                         sub_page_soup = BeautifulSoup(self.driver.page_source, 'html.parser')
                     except KeyError:
                         raise
-                    except:
+                    except Exception as e:
+                        print(e.message)
+                        print(e.args)
                         print("Error occurred while retrieving link: " + link)
                         error_with_current_link = True
                     
                     if (error_with_current_link == True):
                         try:
                             self.driver.get(link)
-                            time.sleep(5)
+                            time.sleep(15)
                             sub_page_soup = BeautifulSoup(self.driver.page_source, 'html.parser')
                         except KeyError:
                             raise
-                        except:
+                        except Exception as e:
+                            print(e.message)
+                            print(e.args)
                             print("Error occurred while re-retrieving link: " + link)
                             current_error_links.append(link)
 
@@ -321,7 +325,9 @@ def main():
     except KeyError:
         downloader.quit_driver()
         raise
-    except:
+    except Exception as e:
+        print(e.message)
+        print(e.args)
         print("Unhandled exception.")
         downloader.quit_driver()
     finally:
