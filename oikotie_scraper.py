@@ -28,6 +28,7 @@ USER_AGENT_LIST = [
     "Mozilla/5.0 (Linux; Android 7.0; HTC 10 Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.83 Mobile Safari/537.36",
     "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_1 like Mac OS X) AppleWebKit/603.1.30 (KHTML, like Gecko) Version/10.0 Mobile/14E304 Safari/602.1"
 ]
+BROWSER_TO_USE = "Firefox"
 
 #if ((len(sys.argv) -1) > 0):
 #    print("Being called with more than 0 arguments. Setting arguments.")
@@ -269,7 +270,7 @@ class Downloader:
 
 def main():
     print("Initializing Downloader.")
-    downloader = Downloader("main", "Chrome")
+    downloader = Downloader("main", BROWSER_TO_USE)
     templateDict = {}
 
     templateDict["name"] = "yksio-kaksio-myytavat-espoo-helsinki-vantaa-omatontti-kerrostalo"
