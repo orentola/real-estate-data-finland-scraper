@@ -340,24 +340,5 @@ def main():
         downloader.quit_driver()
     finally:
         downloader.quit_driver()
-    while True:
-        time_start = datetime.now()
-        downloader.run_scraper()
-        time_end = datetime.now()
-
-        print("Last runs took: " + str(round(((time_end - time_start).seconds)/60/60)) + " hours.")
-
-        latest_run_date = datetime.strptime(str(time_start.year) + "-" + str(time_start.month) + "-" + str(time_start.day), "%Y-%m-%d").date()
-        date_now = date.today()
-
-        # if a day has passed, sleep for 16 hours
-        # otherwise sleep for 24 hours
-        if (latest_run_date < date_now):
-            time_to_sleep = 60 * 60 * 16
-        else:
-            time_to_sleep = 60 * 60 * 24
-
-        print("Sleeping for " + str(round(time_to_sleep/60/60, 2)) + " hours.")
-        time.sleep(time_to_sleep)
 
 main()
