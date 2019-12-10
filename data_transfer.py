@@ -22,8 +22,12 @@ import time
 from datetime import datetime
 from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
 
+try:
+	CONN_STRING = os.getenv("oikotie-scraper-azure-blob-connstring")
+except:
+	print("Connection string environmental variables not set. Exiting.")
+	exit()
 
-CONN_STRING = os.getenv("oikotie-scraper-azure-blob-connstring")
 PATH = os.getcwd()
 STORAGE_ACCOUNT_NAME = "generaldatastore123"
 CONTAINER_NAME = "oikotie-scraped"
