@@ -15,6 +15,13 @@ from random import random
 from datetime import datetime
 from datetime import date
 
+"""
+TODO:
+- Fix exception handling
+- Change the overall design more into object-oriented approach
+- Separate classes from the main file into separate files
+- Create a configuration file / somehow manage the templates in a better fashion
+"""
 
 home_path = os.path.join(os.getcwd())
 USER_AGENT_LIST = [
