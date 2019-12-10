@@ -23,7 +23,8 @@ from datetime import datetime
 from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
 
 try:
-	CONN_STRING = os.getenv("oikotie-scraper-azure-blob-connstring")
+	#CONN_STRING = os.getenv("oikotie-scraper-azure-blob-connstring")
+	CONN_STRING = os.getenv("CONN_STRING")
 except:
 	print("Connection string environmental variables not set. Exiting.")
 	exit()
