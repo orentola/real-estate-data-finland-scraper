@@ -15,6 +15,7 @@ from random import random
 from datetime import datetime
 from datetime import date
 
+
 home_path = os.path.join(os.getcwd())
 USER_AGENT_LIST = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
