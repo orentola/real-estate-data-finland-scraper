@@ -59,6 +59,8 @@ BROWSER_TO_USE = "Chrome"
 #templateDict["1"] = "https://asunnot.oikotie.fi/myytavat-asunnot?pagination={PAGE_NUMBER}&locations=%5B%5B64,6,%22Helsinki%22%5D,%5B39,6,%22Espoo%22%5D,%5B65,6,%22Vantaa%22%5D%5D&lotOwnershipType%5B%5D=1&roomCount%5B%5D=1&roomCount%5B%5D=2&buildingType%5B%5D=1&buildingType%5B%5D=256&cardType=100"
 
 def string_cleaner(input):
+    if (input == None):
+        return ""
     return input.replace(u'\xa0', u' ')
 
 class House:
@@ -96,6 +98,10 @@ class Downloader:
             self.chrome_options.add_argument("--ignore-certificate-errors")
             self.chrome_options.add_argument("--disable-features=VizDisplayCompositor")
             self.chrome_options.add_argument("--user-agent=" + USER_AGENT_LIST[int(round(random() * len(USER_AGENT_LIST), 1))])
+
+            prefs = {"profile.managed_default_content_settings.images": 2} # Disable images
+            self.chrome_options.add_experimental_option("prefs", prefs)
+
             self.driver = webdriver.Chrome(options=self.chrome_options)
             return True
         if (self.driver_type == "Firefox"):
@@ -103,6 +109,7 @@ class Downloader:
             self.options.headless = True
             self.driver_profile = webdriver.FirefoxProfile()
             self.driver_profile.set_preference("general.useragent.override", USER_AGENT_LIST[int(round(random() * len(USER_AGENT_LIST), 1))])            
+            self.driver_profile.set_preference("permissions.default.image", 2) # Disable images
             self.driver = webdriver.Firefox(options=self.options, firefox_profile=self.driver_profile)
             return True
         return False   
@@ -164,7 +171,12 @@ class Downloader:
                     error_with_current_link = False
                     
                     link = card.a.attrs['ng-href']
+                    try:
+                        print("Currently processing link: " + link)
+                    except:
+                        print("Exception occurred at printing the current link to be processed.")
                     street = card.find_all(attrs={"ng-bind":"$ctrl.card.building.address"})
+
                     if (len(street) > 0):
                         street = string_cleaner(street[0].string)
                     else:
