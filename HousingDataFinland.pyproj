@@ -22,7 +22,10 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="data_transfer.py">
+    <Compile Include="data_transfer_to_blob_storage.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="data_transfer_to_sql.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="oikotie_scraper.py" />
