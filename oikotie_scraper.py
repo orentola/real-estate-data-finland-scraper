@@ -230,24 +230,29 @@ class Downloader:
                         sub_page_soup = BeautifulSoup(self.driver.page_source, 'html.parser')
                     except KeyError:
                         raise
+                    except TimeoutException:
+                        print("Timeout error, trying again.")
+                        self.driver.get(link)
+                        #time.sleep(1)
+                        sub_page_soup = BeautifulSoup(self.driver.page_source, 'html.parser')
                     except Exception as e:
                         print(e.message)
                         print(e.args)
                         print("Error occurred while retrieving link: " + link)
-                        error_with_current_link = True
+                        #error_with_current_link = True
                     
-                    if (error_with_current_link == True):
-                        try:
-                            self.driver.get(link)
-                            time.sleep(15)
-                            sub_page_soup = BeautifulSoup(self.driver.page_source, 'html.parser')
-                        except KeyError:
-                            raise
-                        except Exception as e:
-                            print(e.message)
-                            print(e.args)
-                            print("Error occurred while re-retrieving link: " + link)
-                            current_error_links.append(link)
+                    #if (error_with_current_link == True):
+                    #    try:
+                    #        self.driver.get(link)
+                    #        time.sleep(15)
+                    #        sub_page_soup = BeautifulSoup(self.driver.page_source, 'html.parser')
+                    #    except KeyError:
+                    #        raise
+                    #    except Exception as e:
+                    #        print(e.message)
+                    #        print(e.args)
+                    #        print("Error occurred while re-retrieving link: " + link)
+                    #        current_error_links.append(link)
 
                     #with open(os.path.join(home_path, "temp", datetime.now().strftime("%Y-%m-%d"), "pageSourceSubPage" + "_" + str(uuid.uuid4()) + ".txt"), "w", encoding="utf-8") as file:
                     #    file.write(soup.prettify())
@@ -307,10 +312,17 @@ def main():
     templateDict["type"] = "sale"
     downloader.add_template(copy.deepcopy(templateDict))
 
-    templateDict["name"] = "yksio-kaksio-kolmio-nelio-vuokrattavat-helsinki-espoo-vantaa-kerrostalo"
-    templateDict["url"] = "https://asunnot.oikotie.fi/vuokrattavat-asunnot?pagination={PAGE_NUMBER}&locations=%5B%5B1643,4,%22Punavuori,%20Helsinki%22%5D,%5B1641,4,%22Kaartinkaupunki,%20Helsinki%22%5D,%5B1639,4,%22Kruununhaka,%20Helsinki%22%5D,%5B335078,4,%22Ruoholahti,%20Helsinki%22%5D,%5B5695443,4,%22J%C3%A4tk%C3%A4saari,%20Helsinki%22%5D,%5B1642,4,%22Kamppi,%20Helsinki%22%5D,%5B1724,4,%22T%C3%B6%C3%B6l%C3%B6,%20Helsinki%22%5D,%5B5695451,4,%22Kalasatama,%20Helsinki%22%5D,%5B11820666,4,%22Sompasaari,%20Helsinki%22%5D,%5B1648,4,%22S%C3%B6rn%C3%A4inen,%20Helsinki%22%5D,%5B335077,4,%22Pikku%20Huopalahti,%20Helsinki%22%5D,%5B789,4,%22Tapiola,%20Espoo%22%5D,%5B1667,4,%22Haaga,%20Helsinki%22%5D,%5B335093,4,%22Kannelm%C3%A4ki,%20Helsinki%22%5D,%5B11742,4,%22Str%C3%B6mbolstad,%20Sund%22%5D,%5B1684,4,%22Pit%C3%A4j%C3%A4nm%C3%A4ki,%20Helsinki%22%5D,%5B1666,4,%22Oulunkyl%C3%A4,%20Helsinki%22%5D,%5B335101,4,%22Pihlajisto,%20Helsinki%22%5D,%5B1674,4,%22Viikki,%20Helsinki%22%5D,%5B892,4,%22Kivenlahti,%20Espoo%22%5D,%5B803,4,%22Soukka,%20Espoo%22%5D,%5B804,4,%22Espoonlahti,%20Espoo%22%5D,%5B1669,4,%22Lauttasaari,%20Helsinki%22%5D,%5B11820654,4,%22Vattuniemi,%20Helsinki%22%5D,%5B1758,4,%22Tikkurila,%20Vantaa%22%5D,%5B335120,4,%22Mellunm%C3%A4ki,%20Helsinki%22%5D,%5B1676,4,%22Malmi,%20Helsinki%22%5D%5D&roomCount%5B%5D=1&roomCount%5B%5D=2&roomCount%5B%5D=3&roomCount%5B%5D=4&buildingType%5B%5D=1&buildingType%5B%5D=256&cardType=101"
+    #templateDict["name"] = "yksio-kaksio-kolmio-nelio-vuokrattavat-helsinki-espoo-vantaa-kerrostalo"
+    #templateDict["url"] = "https://asunnot.oikotie.fi/vuokrattavat-asunnot?pagination={PAGE_NUMBER}&locations=%5B%5B1643,4,%22Punavuori,%20Helsinki%22%5D,%5B1641,4,%22Kaartinkaupunki,%20Helsinki%22%5D,%5B1639,4,%22Kruununhaka,%20Helsinki%22%5D,%5B335078,4,%22Ruoholahti,%20Helsinki%22%5D,%5B5695443,4,%22J%C3%A4tk%C3%A4saari,%20Helsinki%22%5D,%5B1642,4,%22Kamppi,%20Helsinki%22%5D,%5B1724,4,%22T%C3%B6%C3%B6l%C3%B6,%20Helsinki%22%5D,%5B5695451,4,%22Kalasatama,%20Helsinki%22%5D,%5B11820666,4,%22Sompasaari,%20Helsinki%22%5D,%5B1648,4,%22S%C3%B6rn%C3%A4inen,%20Helsinki%22%5D,%5B335077,4,%22Pikku%20Huopalahti,%20Helsinki%22%5D,%5B789,4,%22Tapiola,%20Espoo%22%5D,%5B1667,4,%22Haaga,%20Helsinki%22%5D,%5B335093,4,%22Kannelm%C3%A4ki,%20Helsinki%22%5D,%5B11742,4,%22Str%C3%B6mbolstad,%20Sund%22%5D,%5B1684,4,%22Pit%C3%A4j%C3%A4nm%C3%A4ki,%20Helsinki%22%5D,%5B1666,4,%22Oulunkyl%C3%A4,%20Helsinki%22%5D,%5B335101,4,%22Pihlajisto,%20Helsinki%22%5D,%5B1674,4,%22Viikki,%20Helsinki%22%5D,%5B892,4,%22Kivenlahti,%20Espoo%22%5D,%5B803,4,%22Soukka,%20Espoo%22%5D,%5B804,4,%22Espoonlahti,%20Espoo%22%5D,%5B1669,4,%22Lauttasaari,%20Helsinki%22%5D,%5B11820654,4,%22Vattuniemi,%20Helsinki%22%5D,%5B1758,4,%22Tikkurila,%20Vantaa%22%5D,%5B335120,4,%22Mellunm%C3%A4ki,%20Helsinki%22%5D,%5B1676,4,%22Malmi,%20Helsinki%22%5D%5D&roomCount%5B%5D=1&roomCount%5B%5D=2&roomCount%5B%5D=3&roomCount%5B%5D=4&buildingType%5B%5D=1&buildingType%5B%5D=256&cardType=101"
+    #templateDict["type"] = "rent"
+    #downloader.add_template(copy.deepcopy(templateDict))
+
+    templateDict["name"] = "yksio-kaksio-vuokrattavat-helsinki-espoo-vantaa-kerrostalo"
+    templateDict["url"] = "https://asunnot.oikotie.fi/vuokrattavat-asunnot?pagination={PAGE_NUMBER}&locations=%5B%5B64,6,%22Helsinki%22%5D,%5B39,6,%22Espoo%22%5D,%5B65,6,%22Vantaa%22%5D%5D&roomCount%5B%5D=1&roomCount%5B%5D=2&buildingType%5B%5D=1&buildingType%5B%5D=256&cardType=101"
     templateDict["type"] = "rent"
     downloader.add_template(copy.deepcopy(templateDict))
+
+	
 
     print("Downloader initialized.")
     

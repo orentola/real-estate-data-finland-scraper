@@ -22,6 +22,8 @@ import json
 
 path_test = "C:\\Users\\orent\\Desktop\\data.json"
 path_test2 = "C:\\Users\\orent\\Desktop\\testdata2.json"
+tulevat_remontit = "C:\\Users\\orent\\Desktop\\remontit.json"
+tehdyt_remontit = "C:\\Users\\orent\\Desktop\\tehdyt.json"
 
 
 with open(path_test, "r") as f:
@@ -29,14 +31,30 @@ with open(path_test, "r") as f:
 
 example = json.loads(data["0"])
 obj_list = []
+completed_renovations = []
+upcoming_renovations = []
 
-for item in data:
-	temp_json = json.loads(item)
-	if (current_object_is_sale): # same for rentals
-		obj_list.append(SaleApartment(current_date, temp_json))
-	else:
-		obj_list.append(RentalApartment(current_date, temp_json))
+current_date = "tempdate"
 
+
+for key, value in data.items():
+	temp_json = json.loads(value)
+	obj = SaleApartment(current_date, temp_json)
+
+	completed_renovations.append(obj.completed_renovations)
+	upcoming_renovations.append(obj.upcoming_renovations)
+#	if (current_object_is_sale): # same for rentals
+#		obj_list.append(SaleApartment(current_date, temp_json))
+#	else:
+#		obj_list.append(RentalApartment(current_date, temp_json))
+
+with open(tulevat_remontit, "w") as f:
+	for l in upcoming_renovations:
+		f.write(l + "\n")
+
+with open(tehdyt_remontit, "w") as f:
+	for l in completed_renovations:
+		f.write(l + "\n")
 
 
 # Add appropriate exception handling, or then not for those fields that are mandatory. 
@@ -58,7 +76,7 @@ class Apartment:
 		self.kerros_max = int(self.get_initial_data(data_dict,"Kerroksia","additionalInfo"))
 
 		# Convert to float maybe. 
-		self.asuinpinta_ala = float(self.get_initial_data(data_dict,"Asuinpinta-ala","additionalInfo").replace("\u00b2", "").replace(" ", "").replace("m", ""))
+		self.asuinpinta_ala = float(self.parse_number_from_eu_to_us_format(self.get_initial_data(data_dict,"Asuinpinta-ala","additionalInfo").replace("\u00b2", "").replace(" ", "").replace("m", "")))
 		self.rooms_description = self.get_initial_data(data_dict,"Huoneiston kokoonpano","additionalInfo")
 		self.room_count = float(self.get_initial_data(data_dict,"Huoneita","additionalInfo"))
 		self.condition = self.get_initial_data(data_dict,"Kunto","additionalInfo")
@@ -98,6 +116,11 @@ class Apartment:
 			return input_dict[additional_dict][key]
 		except KeyError:
 			return ""
+		except TypeError:
+			print("Error getting initial data. TypeError with fields: " + str(key))
+	
+	def parse_number_from_eu_to_us_format(self, input):
+		return input.replace(",", ".")
 
 	def parse_price(self, input):
 		"""
