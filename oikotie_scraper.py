@@ -231,8 +231,9 @@ class Downloader:
                     except KeyError:
                         raise
                     except TimeoutException:
-                        print("Timeout error, trying again.")
-                        self.driver.get(link)
+                        print("Timeout error, skipping.")
+                        continue
+                        #self.driver.get(link)
                         #time.sleep(1)
                         sub_page_soup = BeautifulSoup(self.driver.page_source, 'html.parser')
                     except Exception as e:
