@@ -19,15 +19,37 @@ endpoints in a SQL database.
 """
 
 import json
+import os
+import requests
 
 path_test = "C:\\Users\\orent\\Documents\\test_data_json.json"
 path_test2 = "C:\\Users\\orent\\Desktop\\testdata2.json"
 tulevat_remontit = "C:\\Users\\orent\\Desktop\\remontit.json"
 tehdyt_remontit = "C:\\Users\\orent\\Desktop\\tehdyt.json"
+output_file = "C:\\Users\\orent\\Documents\\output_test.json"
+example_data = "C:\\Users\\orent\\Documents\\Asuntosijoittaminen\\webscraper\\example_data\\geocoding_example.json"
 
+MAPS_API_KEY = os.getenv("AZURE_MAPS_API_KEY")
+MAPS_CLIENT_ID = os.getenv("AZURE_MAPS_CLIENT_ID")
+
+s = requests.Session()
+
+request_params_dict = {
+	"subscription-key":MAPS_API_KEY,
+	"api-version":"1.0",
+	"x-ms-client-id":MAPS_CLIENT_ID
+	}
+
+geocoding_url = "https://atlas.microsoft.com/search/address/json"
+
+s.params = request_params_dict
 
 with open(path_test, "r") as f:
 	data = json.load(f)
+
+with open(example_data, "r") as f:
+	data = f.read()
+
 
 example = json.loads(data["0"])
 obj_list = []
@@ -43,35 +65,45 @@ for key, value in data.items():
 	obj = RentalApartment(current_date, temp_json)
 	obj_list.append(obj)
 
-	completed_renovations.append(obj.completed_renovations)
-	upcoming_renovations.append(obj.upcoming_renovations)
+	#completed_renovations.append(obj.completed_renovations)
+	#upcoming_renovations.append(obj.upcoming_renovations)
 #	if (current_object_is_sale): # same for rentals
 #		obj_list.append(SaleApartment(current_date, temp_json))
 #	else:
 #		obj_list.append(RentalApartment(current_date, temp_json))
 
-with open(tulevat_remontit, "w") as f:
-	for l in upcoming_renovations:
-		f.write(l + "\n")
+#with open(tulevat_remontit, "w") as f:
+#	for l in upcoming_renovations:
+#		f.write(l + "\n")
 
-with open(tehdyt_remontit, "w") as f:
-	for l in completed_renovations:
-		f.write(l + "\n")
+#with open(tehdyt_remontit, "w") as f:
+#	for l in completed_renovations:
+#		f.write(l + "\n")
 
+output_list = []
+
+for it in obj_list:
+	output_list.append(it.to_string() + "\n")
+
+with open(output_file, "w") as f:
+	for it in output_list:
+		f.write(it)
 
 # Add appropriate exception handling, or then not for those fields that are mandatory. 
 class Apartment:
 	def __init__(self, current_date, data_dict):
+		#self.address = ""
 		self.current_date = current_date
 		self.link = self.get_initial_data(data_dict,"link")
 		self.street = self.get_initial_data(data_dict,"street")
-		self.distrcit = self.get_initial_data(data_dict,"district")
+		self.district = self.get_initial_data(data_dict,"district")
 		self.city = self.get_initial_data(data_dict,"city")
-		
 		self.room_configuration = self.get_initial_data(data_dict,"roomConfiguration")
 		self.building_year = self.get_initial_data(data_dict,"buildingYear")
 		self.subType = self.get_initial_data(data_dict,"subType")
 		
+		self.set_address()
+
 		#self.kaupunging_osa = self.get_initial_data(data_dict,"Kaupunginosa","additionalInfo")
 		self.kohdenumero = self.get_initial_data(data_dict,"Kohdenumero","additionalInfo")
 		self.kerros = int(self.get_initial_data(data_dict,"Kerros","additionalInfo").replace(" ", "").split("/")[0])
@@ -88,7 +120,9 @@ class Apartment:
 		self.bathroom_equipment = self.get_initial_data(data_dict,"Kylpyhuoneen varusteet","additionalInfo")
 		self.upcoming_renovations = self.get_initial_data(data_dict,"Tulevat remontit","additionalInfo")
 		self.completed_renovations = self.get_initial_data(data_dict,"Tehdyt remontit","additionalInfo")
-		
+		self.ownership_type = self.get_initial_data(data_dict,"Asumistyyppi","additionalInfo")
+		self.new_apartment = self.get_initial_data(data_dict,"Uudiskohde","additionalInfo")
+
 		# TODO handle sauna string better
 		self.has_sauna = self.get_initial_data(data_dict,"Taloyhtiössä on sauna","additionalInfo")
 		
@@ -140,12 +174,38 @@ class Apartment:
 			print("Problem with string: " + input)
 			print("Parsed string: " + input.replace("\u20ac", "").replace(" ","").replace("/", "").replace("kk","").replace(",","."))
 
+	def get_address(self):
+		return self._address
+	def set_address(self):
+		self._address = self.street + " " + self.district + " " + self.city
+	address = property(get_address, set_address)
 
+	def get_string(self, delimiter=','):
+		data = attrs(self)
+		output_str = ""
 
-# TBD TO WHICH OBJECT BELONGS TO:
-# data_dict["additionalInfo"]["Asumistyyppi"] #Omistus etc.
-# data_dict["additionalInfo"]["Vesimaksu"] 
-# data_dict["additionalInfo"]["Uudiskohde"]
+		for key, value in data.items():
+			output_str = output_str + delimiter + str(value)
+		
+		return output_str.replace(delimiter, "", 1) # remove first delimiter	
+
+	def geocode_address(self, geocoding_url, session_obj):
+		try:
+			session_obj.params = session_obj.params.update({"query": self.address})
+			response = session_obj.get(goecoding_url)
+
+			if (response.status_code == requests.status.ok):
+				# Parse lat and lon
+				response_json = json.loads(response.text)
+				response_json_results = json.loads(response_json["results"])
+				self.lat = float(response_json["results"][0]["position"]["lat"])
+				self.lon = float(response_json["results"][0]["position"]["lon"])
+				self.lat_lon_accuracy = response_json["results"][0]["entityType"]
+			else:
+				print("Response not ok, problem at: " + self.link)
+				# Problem
+		except KeyError:
+			print("Problem accessing json element at: " + self.link)
 
 class RentalApartment(Apartment):
 	def __init__(self, current_date, data_dict):
