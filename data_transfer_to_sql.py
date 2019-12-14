@@ -20,7 +20,7 @@ endpoints in a SQL database.
 
 import json
 
-path_test = "C:\\Users\\orent\\Desktop\\data.json"
+path_test = "C:\\Users\\orent\\Documents\\test_data_json.json"
 path_test2 = "C:\\Users\\orent\\Desktop\\testdata2.json"
 tulevat_remontit = "C:\\Users\\orent\\Desktop\\remontit.json"
 tehdyt_remontit = "C:\\Users\\orent\\Desktop\\tehdyt.json"
@@ -39,7 +39,9 @@ current_date = "tempdate"
 
 for key, value in data.items():
 	temp_json = json.loads(value)
-	obj = SaleApartment(current_date, temp_json)
+	#obj = SaleApartment(current_date, temp_json)
+	obj = RentalApartment(current_date, temp_json)
+	obj_list.append(obj)
 
 	completed_renovations.append(obj.completed_renovations)
 	upcoming_renovations.append(obj.upcoming_renovations)
@@ -145,11 +147,17 @@ class Apartment:
 # data_dict["additionalInfo"]["Vesimaksu"] 
 # data_dict["additionalInfo"]["Uudiskohde"]
 
-# TODO
-#class RentalApartment(Apartment):
-#	def __init__(self, **data_dict):
-#		super().__init__()
-#		#self.etc
+class RentalApartment(Apartment):
+	def __init__(self, current_date, data_dict):
+		super().__init__(current_date, data_dict)
+
+		#self.rent = self.parse_price((self.get_initial_data(data_dict, "price"))
+		self.rent = self.parse_price(self.get_initial_data(data_dict, "Vuokra/kk", "additionalInfo"))
+		self.deposit_additional_info = self.get_initial_data(data_dict, "Lisätietoa vakuudesta", "additionalInfo")
+		self.rental_period = self.get_initial_data(data_dict, "Vuokra-aika", "additionalInfo")
+		self.deposit_amount = self.get_initial_data(data_dict, "Vakuus", "additionalInfo")
+		self.rent_increase_principles = self.get_initial_data(data_dict, "Vuokrankorotusperusteet", "additionalInfo")
+		self.is_furnished = self.get_initial_data(data_dict, "Vuokrataan kalustettuna", "additionalInfo")
 
 class SaleApartment(Apartment):
 	def __init__(self, current_date, data_dict):

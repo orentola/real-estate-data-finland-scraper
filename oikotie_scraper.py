@@ -280,7 +280,7 @@ class Downloader:
                     
                     # TODO
                     # if len(current_house_objects) == 0: -> rerun latest download
-                    current_house_objects.append(House(link, street, district, city, price, roomConfiguration, buildingYear, subType, sub_page_info_dict, date_today_str))        
+                    current_house_objects.append(House(link, street, district, city, price, roomConfiguration, buildingYear, subType, copy.deepcopy(sub_page_info_dict), date_today_str))        
             end_time = datetime.now()
             self.driver.quit()
             
