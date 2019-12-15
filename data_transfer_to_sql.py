@@ -26,8 +26,9 @@ path_test = "C:\\Users\\orent\\Documents\\test_data_json.json"
 path_test2 = "C:\\Users\\orent\\Desktop\\testdata2.json"
 tulevat_remontit = "C:\\Users\\orent\\Desktop\\remontit.json"
 tehdyt_remontit = "C:\\Users\\orent\\Desktop\\tehdyt.json"
-output_file = "C:\\Users\\orent\\Documents\\output_test.json"
-example_data = "C:\\Users\\orent\\Documents\\Asuntosijoittaminen\\webscraper\\example_data\\geocoding_example.json"
+output_file = "C:\\Users\\orent\\Documents\\Asuntosijoittaminen\\webscraper\\example_data\\output_test.json"
+example_data = "C:\\Users\\orent\\Documents\\Asuntosijoittaminen\\webscraper\\example_data\\example_data_rentals.json"
+obj_output_path = "C:\\Users\\orento\\Documents\\Asuntosijoittaminen\\webscraper\\example_data"
 
 MAPS_API_KEY = os.getenv("AZURE_MAPS_API_KEY")
 MAPS_CLIENT_ID = os.getenv("AZURE_MAPS_CLIENT_ID")
@@ -44,7 +45,7 @@ geocoding_url = "https://atlas.microsoft.com/search/address/json"
 
 s.params = request_params_dict
 
-with open(path_test, "r") as f:
+with open(example_data, "r") as f:
 	data = json.load(f)
 
 with open(example_data, "r") as f:
@@ -82,8 +83,12 @@ for key, value in data.items():
 
 output_list = []
 
+output_list.append(obj_list[0].get_schema("#") + "\n")
+#obj_list[0].geocode_address(geocoding_url, s)
+
 for it in obj_list:
-	output_list.append(it.to_string() + "\n")
+	it.geocode_address(geocoding_url, s)
+	output_list.append(it.as_string("#") + "\n")
 
 with open(output_file, "w") as f:
 	for it in output_list:
@@ -105,12 +110,12 @@ class Apartment:
 		self.set_address()
 
 		#self.kaupunging_osa = self.get_initial_data(data_dict,"Kaupunginosa","additionalInfo")
-		self.kohdenumero = self.get_initial_data(data_dict,"Kohdenumero","additionalInfo")
-		self.kerros = int(self.get_initial_data(data_dict,"Kerros","additionalInfo").replace(" ", "").split("/")[0])
-		self.kerros_max = int(self.get_initial_data(data_dict,"Kerroksia","additionalInfo"))
+		self.oikotie_id = self.get_initial_data(data_dict,"Kohdenumero","additionalInfo")
+		self.floor_number = self.get_initial_data(data_dict,"Kerros","additionalInfo").replace(" ", "").split("/")[0]
+		self.floor_number_max = self.get_initial_data(data_dict,"Kerroksia","additionalInfo")
 
 		# Convert to float maybe. 
-		self.asuinpinta_ala = float(self.parse_number_from_eu_to_us_format(self.get_initial_data(data_dict,"Asuinpinta-ala","additionalInfo").replace("\u00b2", "").replace(" ", "").replace("m", "")))
+		self.size = float(self.parse_number_from_eu_to_us_format(self.get_initial_data(data_dict,"Asuinpinta-ala","additionalInfo").replace("\u00b2", "").replace(" ", "").replace("m", "")))
 		self.rooms_description = self.get_initial_data(data_dict,"Huoneiston kokoonpano","additionalInfo")
 		self.room_count = float(self.get_initial_data(data_dict,"Huoneita","additionalInfo"))
 		self.condition = self.get_initial_data(data_dict,"Kunto","additionalInfo")
@@ -136,6 +141,10 @@ class Apartment:
 		self.window_direction = self.get_initial_data(data_dict,"Ikkunoiden suunta","additionalInfo")
 		self.transportation = self.get_initial_data(data_dict,"Liikenneyhteydet","additionalInfo")
 
+		self.lon = ""
+		self.lat = ""
+		self.lat_lon_accuracy = ""
+
 	def get_initial_data(self, input_dict, key, additional_dict=None):
 		"""
 		This is a function for safe access to the dictionary
@@ -148,8 +157,13 @@ class Apartment:
 
 		try:
 			if additional_dict == None:
-				return input_dict[key]
-			return input_dict[additional_dict][key]
+				output = input_dict[key]
+			else:
+				output = input_dict[additional_dict][key]
+			if (len(output) == 0):
+				return ""	
+			return output.replace("\n", "")
+
 		except KeyError:
 			return ""
 		except TypeError:
@@ -180,32 +194,53 @@ class Apartment:
 		self._address = self.street + " " + self.district + " " + self.city
 	address = property(get_address, set_address)
 
-	def get_string(self, delimiter=','):
-		data = attrs(self)
+	def get_schema(self, delimiter=','):
+		data = self.__dict__
+		output_str = ""
+
+		for key, value in data.items():
+			output_str = output_str + delimiter + str(key)
+
+		return output_str.replace(delimiter, "", 1)[:-1]
+
+	def as_string(self, delimiter=','):
+		data = self.__dict__
 		output_str = ""
 
 		for key, value in data.items():
 			output_str = output_str + delimiter + str(value)
 		
-		return output_str.replace(delimiter, "", 1) # remove first delimiter	
+		return output_str.replace(delimiter, "", 1)[:-1] # remove first and last delimiters
 
 	def geocode_address(self, geocoding_url, session_obj):
+		# This should be de-coupled into a function that allows multiple Map services
 		try:
-			session_obj.params = session_obj.params.update({"query": self.address})
-			response = session_obj.get(goecoding_url)
+			session_obj.params.update({"query": self.address})
+			response = session_obj.get(geocoding_url)
 
-			if (response.status_code == requests.status.ok):
+			if (response.status_code == requests.codes.ok):
 				# Parse lat and lon
 				response_json = json.loads(response.text)
-				response_json_results = json.loads(response_json["results"])
+				
 				self.lat = float(response_json["results"][0]["position"]["lat"])
 				self.lon = float(response_json["results"][0]["position"]["lon"])
-				self.lat_lon_accuracy = response_json["results"][0]["entityType"]
+
+				if "entityType" in response_json["results"][0].keys():
+					self.lat_lon_accuracy = response_json["results"][0]["entityType"]
+				elif "type" in response_json["results"][0].keys():
+					self.lat_lon_accuracy = response_json["results"][0]["type"]
+				else:
+					self.lat_lon_accuracy = ""
 			else:
 				print("Response not ok, problem at: " + self.link)
 				# Problem
 		except KeyError:
 			print("Problem accessing json element at: " + self.link)
+			print("response dump: " + response.text)
+		except IndexError:
+			print("Problem accessing json element at: " + self.link)
+			print("response dump: " + response.text)
+
 
 class RentalApartment(Apartment):
 	def __init__(self, current_date, data_dict):

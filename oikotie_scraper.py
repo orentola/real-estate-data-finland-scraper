@@ -141,7 +141,7 @@ class Downloader:
                 os.makedirs(current_base_path)
             
             self.driver.get(template_url.replace("{PAGE_NUMBER}","1"))
-            time.sleep(5)
+            #time.sleep(5)
             
             soup = BeautifulSoup(self.driver.page_source, 'html.parser')
             maxPages = int(soup.find_all(attrs={"ng-bind":"$ctrl.page + ($ctrl.totalPages ? '/' + $ctrl.totalPages : '')"})[0].string.split('/')[1])
