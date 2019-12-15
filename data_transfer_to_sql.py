@@ -30,8 +30,7 @@ output_file = "C:\\Users\\orent\\Documents\\Asuntosijoittaminen\\webscraper\\exa
 example_data = "C:\\Users\\orent\\Documents\\Asuntosijoittaminen\\webscraper\\example_data\\example_data_rentals.json"
 obj_output_path = "C:\\Users\\orento\\Documents\\Asuntosijoittaminen\\webscraper\\example_data"
 
-MAPS_API_KEY = os.getenv("AZURE_MAPS_API_KEY")
-MAPS_CLIENT_ID = os.getenv("AZURE_MAPS_CLIENT_ID")
+
 
 s = requests.Session()
 
@@ -94,9 +93,85 @@ with open(output_file, "w") as f:
 	for it in output_list:
 		f.write(it)
 
+class GeocodedData:
+	def __init__(self):
+		self.lat = ""
+		self.lon = ""
+		self.lat_lon_accuracy = ""
+
+class GeoCoder:
+	"""
+	This class serves as the interface for geocoding addresses.
+	Supports: Azure Maps, OSM
+
+	Does not support asynchronity at the moment.
+
+	TODO:
+	- Write override method to take the to_str of the Apartment class into account.
+	"""
+	def __init__(self, geocoder):
+		if (geocoder == "OSM"):
+			this.type = "OSM"
+			# TODO
+		elif (geocoder == "Azure Maps"):
+			this.type = "Azure Maps"
+			this.api_key = os.getenv("AZURE_MAPS_API_KEY")
+			this.client_id = os.getenv("AZURE_MAPS_CLIENT_ID")
+			this.session_obj = requests.Session()
+			this.session_obj.params = request_params_dict = {
+				"subscription-key":os.getenv("AZURE_MAPS_API_KEY"),
+				"api-version":"1.0",
+				"x-ms-client-id":os.getenv("AZURE_MAPS_CLIENT_ID")
+				}
+			this.geocoding_endpoint = "https://atlas.microsoft.com/search/address/json"
+		else:
+			raise Exception("Undefined geocoder class.")
+
+	def geocode_address(self, address):
+		if (this.type == "OSM"):
+			return geocode_address_OSM(self, address)
+		elif (this.type == "Azure Maps"):
+			return geocode_address_azure_maps(self, address)
+		return ""
+
+	def geocode_address_azure_maps(self, address):
+		geocodes_output = GeocodedData()
+
+		try:
+			session_obj.params.update({"query": address})
+			response = session_obj.get(geocoding_endpoint)
+
+			if (response.status_code == requests.codes.ok):
+				# Parse lat and lon
+				response_json = json.loads(response.text)
+				
+				geocodes_output.lat = float(response_json["results"][0]["position"]["lat"])
+				geocodes_output.lon = float(response_json["results"][0]["position"]["lon"])
+
+				if "entityType" in response_json["results"][0].keys():
+					geocodes_output.lat_lon_accuracy = response_json["results"][0]["entityType"]
+				elif "type" in response_json["results"][0].keys():
+					geocodes_output.lat_lon_accuracy = response_json["results"][0]["type"]
+			else:
+				print("Response not ok, problem at: " + self.link)
+				# Problem
+		except KeyError:
+			print("Problem accessing json element at: " + self.link)
+			print("response dump: " + response.text)
+		except IndexError:
+			print("Problem accessing json element at: " + self.link)
+			print("response dump: " + response.text)
+		
+		return geocodes_output
+
+	def geocode_address_OSM(self, address):
+		# TODO
+		return ""
+
+
 # Add appropriate exception handling, or then not for those fields that are mandatory. 
 class Apartment:
-	def __init__(self, current_date, data_dict):
+	def __init__(self, current_date, data_dict, geo_coder=None):
 		#self.address = ""
 		self.current_date = current_date
 		self.link = self.get_initial_data(data_dict,"link")
@@ -141,9 +216,8 @@ class Apartment:
 		self.window_direction = self.get_initial_data(data_dict,"Ikkunoiden suunta","additionalInfo")
 		self.transportation = self.get_initial_data(data_dict,"Liikenneyhteydet","additionalInfo")
 
-		self.lon = ""
-		self.lat = ""
-		self.lat_lon_accuracy = ""
+		self.geocoded_data = None
+		self.geo_coder = geo_coder
 
 	def get_initial_data(self, input_dict, key, additional_dict=None):
 		"""
@@ -204,47 +278,30 @@ class Apartment:
 		return output_str.replace(delimiter, "", 1)[:-1]
 
 	def as_string(self, delimiter=','):
+
 		data = self.__dict__
 		output_str = ""
 
 		for key, value in data.items():
-			output_str = output_str + delimiter + str(value)
+			# This should be implemented recursively to account for arbitrary data structures
+			if (isinstance(value, GeocodedData) == True or isinstance(value, GeoCoder) == True):
+				for k1, v1 in value.__dict__.items():
+					output_str = output_str + delimiter + str(v1)
+			else:
+				output_str = output_str + delimiter + str(value)
 		
 		return output_str.replace(delimiter, "", 1)[:-1] # remove first and last delimiters
 
-	def geocode_address(self, geocoding_url, session_obj):
-		# This should be de-coupled into a function that allows multiple Map services
-		try:
-			session_obj.params.update({"query": self.address})
-			response = session_obj.get(geocoding_url)
-
-			if (response.status_code == requests.codes.ok):
-				# Parse lat and lon
-				response_json = json.loads(response.text)
-				
-				self.lat = float(response_json["results"][0]["position"]["lat"])
-				self.lon = float(response_json["results"][0]["position"]["lon"])
-
-				if "entityType" in response_json["results"][0].keys():
-					self.lat_lon_accuracy = response_json["results"][0]["entityType"]
-				elif "type" in response_json["results"][0].keys():
-					self.lat_lon_accuracy = response_json["results"][0]["type"]
-				else:
-					self.lat_lon_accuracy = ""
-			else:
-				print("Response not ok, problem at: " + self.link)
-				# Problem
-		except KeyError:
-			print("Problem accessing json element at: " + self.link)
-			print("response dump: " + response.text)
-		except IndexError:
-			print("Problem accessing json element at: " + self.link)
-			print("response dump: " + response.text)
-
+	def geocode_address(self):
+		if (self.geo_coder == None):
+			print("No Geocoder set for this object.")
+			self.geocoded_data = ""
+		else:
+			self.geocoded_data = self.geo_coder.geocode_address(self.address)
 
 class RentalApartment(Apartment):
-	def __init__(self, current_date, data_dict):
-		super().__init__(current_date, data_dict)
+	def __init__(self, current_date, data_dict, geo_coder=None):
+		super().__init__(current_date, data_dict, geo_coder)
 
 		#self.rent = self.parse_price((self.get_initial_data(data_dict, "price"))
 		self.rent = self.parse_price(self.get_initial_data(data_dict, "Vuokra/kk", "additionalInfo"))
@@ -255,7 +312,7 @@ class RentalApartment(Apartment):
 		self.is_furnished = self.get_initial_data(data_dict, "Vuokrataan kalustettuna", "additionalInfo")
 
 class SaleApartment(Apartment):
-	def __init__(self, current_date, data_dict):
+	def __init__(self, current_date, data_dict, geo_coder=None):
 		super().__init__(current_date, data_dict)
 
 		self.price_without_debt = self.parse_price(self.get_initial_data(data_dict,"Velaton hinta","additionalInfo"))
