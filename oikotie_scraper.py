@@ -163,11 +163,11 @@ class Downloader:
                 #    file.write(soup.prettify())
                 
                 self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight*" + str(round((random() * 0.30) + 0.5,2)) + ");")
-                sub_page_info_dict = {}
-
+                
                 allCards = soup.find_all(attrs={"ng-repeat":"card in $ctrl.parsedCards track by card.id"})
                 
                 for card in allCards:
+                    sub_page_info_dict = {}
                     error_with_current_link = False
                     
                     link = card.a.attrs['ng-href']

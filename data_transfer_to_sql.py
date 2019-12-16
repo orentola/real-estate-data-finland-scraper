@@ -21,13 +21,15 @@ endpoints in a SQL database.
 import json
 import os
 import requests
+import re
 
 path_test = "C:\\Users\\orent\\Documents\\test_data_json.json"
 path_test2 = "C:\\Users\\orent\\Desktop\\testdata2.json"
 tulevat_remontit = "C:\\Users\\orent\\Desktop\\remontit.json"
 tehdyt_remontit = "C:\\Users\\orent\\Desktop\\tehdyt.json"
-output_file = "C:\\Users\\orent\\Documents\\Asuntosijoittaminen\\webscraper\\example_data\\output_test.json"
-example_data = "C:\\Users\\orent\\Documents\\Asuntosijoittaminen\\webscraper\\example_data\\example_data_rentals.json"
+output_file = "C:\\Users\\orent\\Documents\\Asuntosijoittaminen\\webscraper\\example_data\\output_test_sales.json"
+#example_data = "C:\\Users\\orent\\Documents\\Asuntosijoittaminen\\webscraper\\example_data\\example_data_rentals.json"
+example_data = "C:\\Users\\orent\\Documents\\Asuntosijoittaminen\\webscraper\\example_data\\example_data_sales.json"
 obj_output_path = "C:\\Users\\orento\\Documents\\Asuntosijoittaminen\\webscraper\\example_data"
 
 
@@ -47,22 +49,19 @@ s.params = request_params_dict
 with open(example_data, "r") as f:
 	data = json.load(f)
 
-with open(example_data, "r") as f:
-	data = f.read()
+#with open(example_data, "r") as f:
+#	data = f.read()
 
 
-example = json.loads(data["0"])
+#example = json.loads(data["0"])
 obj_list = []
-completed_renovations = []
-upcoming_renovations = []
 
 current_date = "tempdate"
 
-
 for key, value in data.items():
 	temp_json = json.loads(value)
-	#obj = SaleApartment(current_date, temp_json)
-	obj = RentalApartment(current_date, temp_json)
+	obj = SaleApartment(current_date, temp_json)
+	#obj = RentalApartment(current_date, temp_json)
 	obj_list.append(obj)
 
 	#completed_renovations.append(obj.completed_renovations)
@@ -86,7 +85,7 @@ output_list.append(obj_list[0].get_schema("#") + "\n")
 #obj_list[0].geocode_address(geocoding_url, s)
 
 for it in obj_list:
-	it.geocode_address(geocoding_url, s)
+	#it.geocode_address(geocoding_url, s)
 	output_list.append(it.as_string("#") + "\n")
 
 with open(output_file, "w") as f:
@@ -97,7 +96,10 @@ class GeocodedData:
 	def __init__(self):
 		self.lat = ""
 		self.lon = ""
-		self.lat_lon_accuracy = ""
+		self.lat_lon_type = ""
+		self.additional_info = ""
+		self.postal_code = ""
+		self.status = False
 
 class GeoCoder:
 	"""
@@ -110,27 +112,29 @@ class GeoCoder:
 	- Write override method to take the to_str of the Apartment class into account.
 	"""
 	def __init__(self, geocoder):
+		self.session_obj = requests.Session()
+
 		if (geocoder == "OSM"):
-			this.type = "OSM"
-			# TODO
+			self.type = "OSM"
+			self.geocoding_endpoint = "https://nominatim.openstreetmap.org/search/{ADDRESS}?format=json&country=Finland"
+			
 		elif (geocoder == "Azure Maps"):
-			this.type = "Azure Maps"
-			this.api_key = os.getenv("AZURE_MAPS_API_KEY")
-			this.client_id = os.getenv("AZURE_MAPS_CLIENT_ID")
-			this.session_obj = requests.Session()
-			this.session_obj.params = request_params_dict = {
+			self.type = "Azure Maps"
+			self.api_key = os.getenv("AZURE_MAPS_API_KEY")
+			self.client_id = os.getenv("AZURE_MAPS_CLIENT_ID")
+			self.session_obj.params = request_params_dict = {
 				"subscription-key":os.getenv("AZURE_MAPS_API_KEY"),
 				"api-version":"1.0",
 				"x-ms-client-id":os.getenv("AZURE_MAPS_CLIENT_ID")
 				}
-			this.geocoding_endpoint = "https://atlas.microsoft.com/search/address/json"
+			self.geocoding_endpoint = "https://atlas.microsoft.com/search/address/json"
 		else:
 			raise Exception("Undefined geocoder class.")
 
 	def geocode_address(self, address):
-		if (this.type == "OSM"):
+		if (self.type == "OSM"):
 			return geocode_address_OSM(self, address)
-		elif (this.type == "Azure Maps"):
+		elif (self.type == "Azure Maps"):
 			return geocode_address_azure_maps(self, address)
 		return ""
 
@@ -149,9 +153,9 @@ class GeoCoder:
 				geocodes_output.lon = float(response_json["results"][0]["position"]["lon"])
 
 				if "entityType" in response_json["results"][0].keys():
-					geocodes_output.lat_lon_accuracy = response_json["results"][0]["entityType"]
+					geocodes_output.lat_lon_type = response_json["results"][0]["entityType"]
 				elif "type" in response_json["results"][0].keys():
-					geocodes_output.lat_lon_accuracy = response_json["results"][0]["type"]
+					geocodes_output.lat_lon_type = response_json["results"][0]["type"]
 			else:
 				print("Response not ok, problem at: " + self.link)
 				# Problem
@@ -165,8 +169,33 @@ class GeoCoder:
 		return geocodes_output
 
 	def geocode_address_OSM(self, address):
-		# TODO
-		return ""
+		geocodes_output = GeocodedData()
+		try:
+			url = geocoding_endpoint.replace("{ADDRESS}", self.address)
+			response = session_obj.get(url)
+
+			if (response.status_code == requests.codes.ok):
+				response_json = json.loads(response.text)
+				geocodes_output.lat = response_json[0]["lat"]
+				geocodes_output.lon = response_json[0]["lon"]
+				if "display_name" in response_json[0].keys():
+					geocodes_output.additional_info = response_json[0]["display_name"]
+				if "type" in response_json[0].keys():
+					geocodes_output.lat_lon_type = response_json[0]["type"]
+				
+				postal_code_pattern = "\d{5}"
+				r1 = re.findall(postal_code_pattern, self.additional_info)
+				geocodes_output.postal_code = r1[0]
+				geocodes_output.status = True
+
+		except KeyError:
+			print("Problem accessing json element at: " + self.link)
+			print("response dump: " + response.text)
+		except IndexError:
+			print("Problem accessing json element at: " + self.link)
+			print("response dump: " + response.text)
+		
+		return geocodes_output
 
 
 # Add appropriate exception handling, or then not for those fields that are mandatory. 
@@ -219,6 +248,34 @@ class Apartment:
 		self.geocoded_data = None
 		self.geo_coder = geo_coder
 
+		# Status of renovations, completed, upcoming
+		self.set_completed_renovations()
+
+		#self.set_renovation_status_pipes() 
+		#self.set_renovation_status_roof()
+		#self.set_renovation_status_outer_walls()
+		#self.set_renovation_status_balcony()
+		#self.set_renovation_status_windows()
+		#self.set_renovation_status_elevator()
+
+	#def set_completed_renovations(self):
+	#	# TODO TO IDENTIFY WHICH RENOVATIONS ARE COMPLETED, this is not trivial
+	#	keywords_windows = ["ikkuna", "ikkunoiden"]
+	#	keywords_pipes = ["putkisaneeraus", "putkiremontin yht"]
+
+	#	self._completed_renovations = {
+	#		"pipes":"",
+	#		"roof":"",
+	#		"outer_walls":"",
+	#		"balcony":"",
+	#		"windows":"",
+	#		"elevator":""
+	#		}
+
+	#def get_completed_renovations(self):
+	#	return self._completed_renovations
+	#completed_renovations = propety(set_completed_renovations, get_completed_renovations)
+
 	def get_initial_data(self, input_dict, key, additional_dict=None):
 		"""
 		This is a function for safe access to the dictionary
@@ -268,6 +325,7 @@ class Apartment:
 		self._address = self.street + " " + self.district + " " + self.city
 	address = property(get_address, set_address)
 
+
 	def get_schema(self, delimiter=','):
 		data = self.__dict__
 		output_str = ""
@@ -310,10 +368,21 @@ class RentalApartment(Apartment):
 		self.deposit_amount = self.get_initial_data(data_dict, "Vakuus", "additionalInfo")
 		self.rent_increase_principles = self.get_initial_data(data_dict, "Vuokrankorotusperusteet", "additionalInfo")
 		self.is_furnished = self.get_initial_data(data_dict, "Vuokrataan kalustettuna", "additionalInfo")
+		self.other_terms = self.get_initial_data(data_dict, "Muut ehdot", "additionalInfo")
+		self._is_forenom = self.set_is_forenom()
+		
+	def get_is_forenom(self):
+		return self._is_forenom
+	def set_is_forenom(self):
+		self._is_forenom = True if self.other_terms.find("Forenom") != -1 else False
+	is_forenom = property(get_is_forenom, set_is_forenom)
+
 
 class SaleApartment(Apartment):
 	def __init__(self, current_date, data_dict, geo_coder=None):
 		super().__init__(current_date, data_dict)
+
+		# TODO Implement how to detect renovations
 
 		self.price_without_debt = self.parse_price(self.get_initial_data(data_dict,"Velaton hinta","additionalInfo"))
 		self.sale_price = self.parse_price(self.get_initial_data(data_dict,"Myyntihinta","additionalInfo"))
