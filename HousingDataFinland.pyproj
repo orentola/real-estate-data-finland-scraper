@@ -4,8 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>f8fa771a-d4db-4a17-b148-afd00001d40c</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>
-    </StartupFile>
+    <StartupFile>data_transfer\raw_data_transformer.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -22,13 +21,17 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="data_transfer_to_blob_storage.py">
+    <Compile Include="data_transfer\data_transfer_to_blob_storage.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="data_transfer_to_sql.py">
+    <Compile Include="data_transfer\raw_data_transformer.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="oikotie_scraper.py" />
+    <Compile Include="scrapers\oikotie_scraper.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="data_transfer\" />
+    <Folder Include="scrapers\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
