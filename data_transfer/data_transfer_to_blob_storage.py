@@ -32,6 +32,7 @@ except:
 PATH = os.getcwd()
 STORAGE_ACCOUNT_NAME = "generaldatastore123"
 CONTAINER_NAME = "oikotie-scraped"
+OVERWRITE_EXISTING_BLOB = True
 
 try:
 	BLOB_SERVICE_CLIENT = BlobServiceClient.from_connection_string(CONN_STRING)
@@ -78,7 +79,7 @@ def upload_file(path):
 	try:
 		blob_client = BLOB_SERVICE_CLIENT.get_blob_client(container=CONTAINER_NAME, blob=path)
 		with open(path, "rb") as data:
-			blob_client.upload_blob(data)
+			blob_client.upload_blob(data, overwrite=OVERWRITE_EXISTING_BLOB)
 	except Exception as e:
 		print("Error uploading file: " + str(path))
 		print(str(e))
