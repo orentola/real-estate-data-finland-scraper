@@ -31,9 +31,6 @@
     <Compile Include="data_transfer\raw_data_transformer.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="data_transfer\sqlizer.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="scrapers\oikotie_scraper.py" />
   </ItemGroup>
   <ItemGroup>
