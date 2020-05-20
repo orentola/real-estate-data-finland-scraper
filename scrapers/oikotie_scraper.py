@@ -44,7 +44,7 @@ def string_cleaner(input):
     return input.replace(u'\xa0', u' ')
 
 class House:
-    def __init__(self, link, street, district, city, price, roomConfiguration, buildingYear, subType, additionalInfo, date):
+    def __init__(self, link, street, district, city, price, size, roomConfiguration, buildingYear, subType, additionalInfo, date):
         self.link = link
         self.street = street
         self.district = district
@@ -55,6 +55,7 @@ class House:
         self.subType = subType
         self.additionalInfo = additionalInfo
         self.date = date
+        self.size = size
 
 class Downloader:
     def __init__(self, name, driver_type):
@@ -261,7 +262,7 @@ class Downloader:
                     
                     # TODO
                     # if len(current_house_objects) == 0: -> rerun latest download
-                    current_house_objects.append(House(link, street, district, city, price, roomConfiguration, buildingYear, subType, copy.deepcopy(sub_page_info_dict), date_today_str))        
+                    current_house_objects.append(House(link, street, district, city, price, size, roomConfiguration, buildingYear, subType, copy.deepcopy(sub_page_info_dict), date_today_str))        
             end_time = datetime.now()
             self.driver.quit()
             
