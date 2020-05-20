@@ -38,26 +38,6 @@ USER_AGENT_LIST = [
 ]
 BROWSER_TO_USE = "Chrome"
 
-#if ((len(sys.argv) -1) > 0):
-#    print("Being called with more than 0 arguments. Setting arguments.")
-#    template_url = templateDict[sys.argv[2]]
-#    #home_path = "C:\\Users\\orent\\Documents\\Asuntosijoittaminen\\webscraper\\{path}\\".replace("{path}", sys.argv[1])
-#    home_path = os.path.join(os.getcwd(), sys.argv[1], sys.argv[2])
-#    with open(os.path.join(home_path, "config.txt"), "w") as f:
-#        f.write(templateDict[sys.argv[2]])
-#else:
-#    print("Usage: python.py rent/sale template_id")
-#    exit()
-
-### kolmio-nelio myytavat helsinki oma-tontti kerrostalo
-#templateDict["2"] = "https://asunnot.oikotie.fi/myytavat-asunnot?pagination={PAGE_NUMBER}&locations=%5B%5B64,6,%22Helsinki%22%5D%5D&lotOwnershipType%5B%5D=1&roomCount%5B%5D=3&roomCount%5B%5D=4&buildingType%5B%5D=1&buildingType%5B%5D=256&cardType=100"
-
-### yksio-kaksio-kolmio-nelio vuokrattavat helsingin/espoon/vantaan alueilta kerrostalo
-#templateDict["3"] = "https://asunnot.oikotie.fi/vuokrattavat-asunnot?pagination={PAGE_NUMBER}&locations=%5B%5B1643,4,%22Punavuori,%20Helsinki%22%5D,%5B1641,4,%22Kaartinkaupunki,%20Helsinki%22%5D,%5B1639,4,%22Kruununhaka,%20Helsinki%22%5D,%5B335078,4,%22Ruoholahti,%20Helsinki%22%5D,%5B5695443,4,%22J%C3%A4tk%C3%A4saari,%20Helsinki%22%5D,%5B1642,4,%22Kamppi,%20Helsinki%22%5D,%5B1724,4,%22T%C3%B6%C3%B6l%C3%B6,%20Helsinki%22%5D,%5B5695451,4,%22Kalasatama,%20Helsinki%22%5D,%5B11820666,4,%22Sompasaari,%20Helsinki%22%5D,%5B1648,4,%22S%C3%B6rn%C3%A4inen,%20Helsinki%22%5D,%5B335077,4,%22Pikku%20Huopalahti,%20Helsinki%22%5D,%5B789,4,%22Tapiola,%20Espoo%22%5D,%5B1667,4,%22Haaga,%20Helsinki%22%5D,%5B335093,4,%22Kannelm%C3%A4ki,%20Helsinki%22%5D,%5B11742,4,%22Str%C3%B6mbolstad,%20Sund%22%5D,%5B1684,4,%22Pit%C3%A4j%C3%A4nm%C3%A4ki,%20Helsinki%22%5D,%5B1666,4,%22Oulunkyl%C3%A4,%20Helsinki%22%5D,%5B335101,4,%22Pihlajisto,%20Helsinki%22%5D,%5B1674,4,%22Viikki,%20Helsinki%22%5D,%5B892,4,%22Kivenlahti,%20Espoo%22%5D,%5B803,4,%22Soukka,%20Espoo%22%5D,%5B804,4,%22Espoonlahti,%20Espoo%22%5D,%5B1669,4,%22Lauttasaari,%20Helsinki%22%5D,%5B11820654,4,%22Vattuniemi,%20Helsinki%22%5D,%5B1758,4,%22Tikkurila,%20Vantaa%22%5D,%5B335120,4,%22Mellunm%C3%A4ki,%20Helsinki%22%5D,%5B1676,4,%22Malmi,%20Helsinki%22%5D%5D&roomCount%5B%5D=1&roomCount%5B%5D=2&roomCount%5B%5D=3&roomCount%5B%5D=4&buildingType%5B%5D=1&buildingType%5B%5D=256&cardType=101"
-
-### Yksio-kaksio myytavat espoo-helsinki-vantaa oma-tontti kerrostalo
-#templateDict["1"] = "https://asunnot.oikotie.fi/myytavat-asunnot?pagination={PAGE_NUMBER}&locations=%5B%5B64,6,%22Helsinki%22%5D,%5B39,6,%22Espoo%22%5D,%5B65,6,%22Vantaa%22%5D%5D&lotOwnershipType%5B%5D=1&roomCount%5B%5D=1&roomCount%5B%5D=2&buildingType%5B%5D=1&buildingType%5B%5D=256&cardType=100"
-
 def string_cleaner(input):
     if (input == None):
         return ""
@@ -262,11 +242,11 @@ class Downloader:
 
                     for info in all_info_table_rows:
                         try:
-                            metadata = info.select("div.info-table__title")
+                            metadata = info.select("dt.info-table__title")
                             if (len(metadata) > 0):
                                 metadata = string_cleaner(metadata[0].string)
                             
-                            value = info.select("div.info-table__value")
+                            value = info.select("dd.info-table__value")
                             if (len(value) > 0):
                                 value = string_cleaner(value[0].string)
 
@@ -313,18 +293,16 @@ def main():
     templateDict["type"] = "sale"
     downloader.add_template(copy.deepcopy(templateDict))
 
-    #templateDict["name"] = "yksio-kaksio-kolmio-nelio-vuokrattavat-helsinki-espoo-vantaa-kerrostalo"
-    #templateDict["url"] = "https://asunnot.oikotie.fi/vuokrattavat-asunnot?pagination={PAGE_NUMBER}&locations=%5B%5B1643,4,%22Punavuori,%20Helsinki%22%5D,%5B1641,4,%22Kaartinkaupunki,%20Helsinki%22%5D,%5B1639,4,%22Kruununhaka,%20Helsinki%22%5D,%5B335078,4,%22Ruoholahti,%20Helsinki%22%5D,%5B5695443,4,%22J%C3%A4tk%C3%A4saari,%20Helsinki%22%5D,%5B1642,4,%22Kamppi,%20Helsinki%22%5D,%5B1724,4,%22T%C3%B6%C3%B6l%C3%B6,%20Helsinki%22%5D,%5B5695451,4,%22Kalasatama,%20Helsinki%22%5D,%5B11820666,4,%22Sompasaari,%20Helsinki%22%5D,%5B1648,4,%22S%C3%B6rn%C3%A4inen,%20Helsinki%22%5D,%5B335077,4,%22Pikku%20Huopalahti,%20Helsinki%22%5D,%5B789,4,%22Tapiola,%20Espoo%22%5D,%5B1667,4,%22Haaga,%20Helsinki%22%5D,%5B335093,4,%22Kannelm%C3%A4ki,%20Helsinki%22%5D,%5B11742,4,%22Str%C3%B6mbolstad,%20Sund%22%5D,%5B1684,4,%22Pit%C3%A4j%C3%A4nm%C3%A4ki,%20Helsinki%22%5D,%5B1666,4,%22Oulunkyl%C3%A4,%20Helsinki%22%5D,%5B335101,4,%22Pihlajisto,%20Helsinki%22%5D,%5B1674,4,%22Viikki,%20Helsinki%22%5D,%5B892,4,%22Kivenlahti,%20Espoo%22%5D,%5B803,4,%22Soukka,%20Espoo%22%5D,%5B804,4,%22Espoonlahti,%20Espoo%22%5D,%5B1669,4,%22Lauttasaari,%20Helsinki%22%5D,%5B11820654,4,%22Vattuniemi,%20Helsinki%22%5D,%5B1758,4,%22Tikkurila,%20Vantaa%22%5D,%5B335120,4,%22Mellunm%C3%A4ki,%20Helsinki%22%5D,%5B1676,4,%22Malmi,%20Helsinki%22%5D%5D&roomCount%5B%5D=1&roomCount%5B%5D=2&roomCount%5B%5D=3&roomCount%5B%5D=4&buildingType%5B%5D=1&buildingType%5B%5D=256&cardType=101"
-    #templateDict["type"] = "rent"
-    #downloader.add_template(copy.deepcopy(templateDict))
-
     templateDict["name"] = "yksio-kaksio-vuokrattavat-helsinki-espoo-vantaa-kerrostalo"
     templateDict["url"] = "https://asunnot.oikotie.fi/vuokrattavat-asunnot?pagination={PAGE_NUMBER}&locations=%5B%5B64,6,%22Helsinki%22%5D,%5B39,6,%22Espoo%22%5D,%5B65,6,%22Vantaa%22%5D%5D&roomCount%5B%5D=1&roomCount%5B%5D=2&buildingType%5B%5D=1&buildingType%5B%5D=256&cardType=101"
     templateDict["type"] = "rent"
     downloader.add_template(copy.deepcopy(templateDict))
 
-	
-
+    templateDict["name"] = "omakotitalot-rakennettu-2012-jalkeen-pk-seutu"
+    templateDict["url"] = "https://asunnot.oikotie.fi/myytavat-asunnot?pagination={PAGE_NUMBER}&locations=%5B%5B64,6,%22Helsinki%22%5D,%5B65,6,%22Vantaa%22%5D,%5B39,6,%22Espoo%22%5D,%5B130,6,%22Kauniainen%22%5D,%5B147,6,%22Kirkkonummi%22%5D,%5B359,6,%22Sipoo%22%5D%5D&lotOwnershipType%5B%5D=1&size%5Bmin%5D=120&newDevelopment=0&buildingType%5B%5D=4&buildingType%5B%5D=8&buildingType%5B%5D=32&buildingType%5B%5D=128&constructionYear%5Bmin%5D=2012&cardType=100"
+    templateDict["type"] = "sale"
+    downloader.add_template(copy.deepcopy(templateDict))
+    
     print("Downloader initialized.")
     
     print("Starting the downloader loop.")
