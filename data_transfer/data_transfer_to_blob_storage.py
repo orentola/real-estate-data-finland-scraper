@@ -82,14 +82,14 @@ def traverse_folder_structure_and_upload(subfolder="data"):
 
 def upload_file(path):
 	try:
-		blob_client = BLOB_SERVICE_CLIENT.get_blob_client(container=CONTAINER_NAME, blob=path)
 		with open(path, "rb") as data:
+			blob_client = BLOB_SERVICE_CLIENT.get_blob_client(container=CONTAINER_NAME, blob=path)
 			blob_client.upload_blob(data, overwrite=OVERWRITE_EXISTING_BLOB)
-			if DELETE_AFTER_UPLOAD is True:
-				print("Delete after upload is ENABLED. Deleting the uploaded file.")
-				os.remove(path)
+		if DELETE_AFTER_UPLOAD is True:
+			print("Delete after upload is ENABLED. Deleting the uploaded file.")
+			os.remove(path)
 	except Exception as e:
-		print("Error uploading file: " + str(path))
+		print("Error either uploading or downloading file: " + str(path))
 		print(str(e))
 
 def main():
