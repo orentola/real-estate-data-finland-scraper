@@ -22,6 +22,9 @@ import time
 from datetime import datetime
 from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
 
+DELETE_AFTER_UPLOAD = False
+DISREGARD_MODIFIED_DATE = False
+
 try:
 	#CONN_STRING = os.getenv("oikotie-scraper-azure-blob-connstring")
 	CONN_STRING = os.getenv("CONN_STRING")
@@ -68,8 +71,10 @@ def traverse_folder_structure_and_upload(subfolder="data"):
 
 	for u in file_names_to_upload:
 		full_path = os.path.join(file_path, u)
-		last_modified = datetime.fromtimestamp(os.path.getmtime(full_path))
-		if (last_modified > LAST_RUN_DATETIME):
+		last_modified = datetime.fromtimestamp(os.path.getmtime(full_path)) if DISREGARD_MODIFIED_DATE is False else ""
+		
+		# or short circuits the clause if DISREGARD_MODIFIED_DATE is False
+		if (DISREGARD_MODIFIED_DATE or last_modified > LAST_RUN_DATETIME):
 			print("Uploading file: " + full_path)
 			upload_file(os.path.join(file_path, u))
 		else:
@@ -80,6 +85,9 @@ def upload_file(path):
 		blob_client = BLOB_SERVICE_CLIENT.get_blob_client(container=CONTAINER_NAME, blob=path)
 		with open(path, "rb") as data:
 			blob_client.upload_blob(data, overwrite=OVERWRITE_EXISTING_BLOB)
+			if DELETE_AFTER_UPLOAD is True:
+				print("Delete after upload is ENABLED. Deleting the uploaded file.")
+				os.remove(path)
 	except Exception as e:
 		print("Error uploading file: " + str(path))
 		print(str(e))

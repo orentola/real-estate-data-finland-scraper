@@ -172,7 +172,6 @@ class Apartment:
 		return output_str.replace(delimiter, "", 1)[:-1]
 
 	def as_string(self, delimiter=','):
-
 		data = self.__dict__
 		output_str = ""
 
