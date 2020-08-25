@@ -320,6 +320,11 @@ def main():
     templateDict["type"] = "sale"
     downloader.add_template(copy.deepcopy(templateDict))
 
+    templateDict["name"] = "ville-vilma-haku-2020"
+    templateDict["url"] = "https://asunnot.oikotie.fi/myytavat-asunnot?pagination={PAGE_NUMBER}&conditionType%5B%5D=1&conditionType%5B%5D=2&conditionType%5B%5D=4&habitationType%5B%5D=1&locations=%5B%5B5695521,4,%22Pohjois-Helsinki,+Helsinki%22%5D,%5B1758,4,%22Tikkurila,+Vantaa%22%5D,%5B1760,4,%22Viertola,+Vantaa%22%5D%5D&price%5Bmax%5D=500000&roomCount%5B%5D=4&roomCount%5B%5D=5&roomCount%5B%5D=6"
+    templateDict["type"] = "sale"
+    downloader.add_template(copy.deepcopy(templateDict))
+
     print("Downloader initialized.")
     
     print("Starting the downloader loop.")
