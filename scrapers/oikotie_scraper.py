@@ -122,11 +122,22 @@ class Downloader:
                 os.makedirs(current_base_path)
             
             self.driver.get(template_url.replace("{PAGE_NUMBER}","1"))
-            #time.sleep(5)
-            
+            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            sleep(0.5)
+            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            #self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight*" + str(round((random() * 0.30) + 0.5,2)) + ");")
             soup = BeautifulSoup(self.driver.page_source, 'html.parser')
-            maxPages = int(soup.find_all(attrs={"ng-bind":"$ctrl.page + ($ctrl.totalPages ? '/' + $ctrl.totalPages : '')"})[0].string.split('/')[1])
-            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight*" + str(round((random() * 0.30) + 0.5,2)) + ");")
+            
+            try:
+                maxPages = int(soup.find_all(attrs={"ng-bind":"$ctrl.page + ($ctrl.totalPages ? '/' + $ctrl.totalPages : '')"})[0].string.split('/')[1])
+            except IndexError:
+                print("Probably an issue with the page. Sleep a while and re-load the page.")
+                sleep(30)
+                self.driver.get(template_url.replace("{PAGE_NUMBER}","1"))
+                self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                soup = BeautifulSoup(self.driver.page_source, 'html.parser')
+
+                maxPages = int(soup.find_all(attrs={"ng-bind":"$ctrl.page + ($ctrl.totalPages ? '/' + $ctrl.totalPages : '')"})[0].string.split('/')[1])
 
             #for i in range(1, 1+1):
             for i in range(1, maxPages+1):
@@ -303,7 +314,12 @@ def main():
     templateDict["url"] = "https://asunnot.oikotie.fi/myytavat-asunnot?pagination={PAGE_NUMBER}&locations=%5B%5B64,6,%22Helsinki%22%5D,%5B65,6,%22Vantaa%22%5D,%5B39,6,%22Espoo%22%5D,%5B130,6,%22Kauniainen%22%5D,%5B147,6,%22Kirkkonummi%22%5D,%5B359,6,%22Sipoo%22%5D%5D&lotOwnershipType%5B%5D=1&size%5Bmin%5D=120&newDevelopment=0&buildingType%5B%5D=4&buildingType%5B%5D=8&buildingType%5B%5D=32&buildingType%5B%5D=128&constructionYear%5Bmin%5D=2012&cardType=100"
     templateDict["type"] = "sale"
     downloader.add_template(copy.deepcopy(templateDict))
-    
+
+    templateDict["name"] = "nelio-viisio-kerrostalo-helsinki-espoo-vantaa-kerrostalo"
+    templateDict["url"] = "https://asunnot.oikotie.fi/myytavat-asunnot?pagination={PAGE_NUMBER}&locations=%5B%5B64,6,%22Helsinki%22%5D,%5B65,6,%22Vantaa%22%5D,%5B39,6,%22Espoo%22%5D%5D&cardType=100&roomCount%5B%5D=4&roomCount%5B%5D=5&buildingType%5B%5D=1&buildingType%5B%5D=256"
+    templateDict["type"] = "sale"
+    downloader.add_template(copy.deepcopy(templateDict))
+
     print("Downloader initialized.")
     
     print("Starting the downloader loop.")

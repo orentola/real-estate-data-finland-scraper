@@ -10,7 +10,7 @@ import json
 import re
 import copy
 
-ENABLE_GEOCODER = True
+ENABLE_GEOCODER = False
 
 INPUT_PATH = "C:\\Users\\orent\\Documents\\Asuntosijoittaminen\\webscraper\\latest\\data\\"
 
@@ -224,8 +224,8 @@ def main():
 	counter_max = 10
 
 	start_date = datetime(2019, 12, 16)
-	#end_date = datetime(2020, 5, 18)
-	end_date = datetime(2019, 12, 17)
+	end_date = datetime(2020, 6, 6)
+	#end_date = datetime(2019, 12, 17)
 
 	print("Starting to loop through scrapers' data.")
 
@@ -268,8 +268,8 @@ def main():
 					current_run_dict[current_link].last_price_guess = current_data_per_item["price"]
 					current_run_dict[current_link].update_first_and_last_seen(current_data_per_item["date"])
 				
-				if counter > counter_max:
-					break
+				#if counter > counter_max:
+				#	break
 
 		for k, v in current_run_dict.items():
 			v.update_time_in_market()
@@ -278,13 +278,13 @@ def main():
 		output_path = os.path.join(INPUT_PATH, type, scraper)
 		Path(output_path).mkdir(parents=True, exist_ok=True)
 
-		with open(os.path.join(output_path, "all_data_geocode_test.csv"), encoding="utf-8", mode="w") as f:
+		with open(os.path.join(output_path, "all_data.csv"), encoding="utf-8", mode="w") as f:
 			#f.write(delimiter.join(columns) + '\n')
 			for k, v in current_run_dict.items():
 				# UnicodeEncodeError: 'charmap' codec can't encode character '\u0308' in position 78: character maps to <undefined>
 				f.write(v.to_string(columns))
 
-		with open(os.path.join(output_path, "all_data_geocode_test.json"), encoding="utf-8", mode="w") as f:
+		with open(os.path.join(output_path, "all_data.json"), encoding="utf-8", mode="w") as f:
 			#f.write(delimiter.join(columns) + '\n')
 			json.dump(current_run_dict, f)
 

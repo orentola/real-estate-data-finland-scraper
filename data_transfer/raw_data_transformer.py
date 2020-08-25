@@ -414,7 +414,7 @@ class DataReader:
 		for r in rent_objects_list:
 			rent_output_list.append(r.as_string("#") + '\n')
 
-		with open(os.path.join(path, "rent.csv"), "w") as f:
+		with open(os.path.join(path, "rent.csv"), "w", encoding='utf-8') as f:
 			for row in rent_output_list:
 				f.write(row)
 		
@@ -424,7 +424,7 @@ class DataReader:
 		for s in sale_objects_list:
 			sale_output_list.append(s.as_string("#") + '\n')
 
-		with open(os.path.join(path, "sale.csv"), "w") as f:
+		with open(os.path.join(path, "sale.csv"), "w", encoding='utf-8') as f:
 			for row in sale_output_list:
 				f.write(row)
 
